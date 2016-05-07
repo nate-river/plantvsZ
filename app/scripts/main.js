@@ -1,7 +1,7 @@
+'use strict';
 /*global $ $:true*/
 /*eslint no-undef: "error"*/
 $(function(){
-  'use strict';
   var zobis = {};
   var zidans = [];
   var move = $('#move').get(0).getContext('2d');
@@ -11,48 +11,50 @@ $(function(){
   };
   ////////////////////////////////////////////////////////////////////
   // 子弹
-  function Zidan (pos, speed, row){
-    this.row = row;
-    this.pos = pos;
-    this.speed = speed;
-  }
-  Zidan.prototype.drawSelf = function () {
-    var ctx = move;
-    ctx.save();
-    ctx.translate(this.pos.x, this.pos.y );
-    ctx.fillStyle = '#498727';
-    ctx.fillRect(0, 0, 10, 10);
-    ctx.restore();
-  };
-  Zidan.prototype.isHitZobi = function(){
-    var min = Infinity;
-    var zobi;
-    $.each(zobis[ this.row ], function(_, v){
-      if( min > v.pos.x ){
-        min = v.pos.x;
-        zobi = v;
-      }
-    });
-    if ( this.pos.x > min ){
-      zobi.life -= 2;
-      if( zobi.life === 0 ){
-        zobis[ this.row ] = $.grep(zobis[ this.row ], function(v){
-          return v !== zobi;
-        });
-        if( zobis[this.row].length === 0 ){
-          delete zobis[this.row];
-          $.each( g.findPlant( this.row ), function(_, v){
-            v.stopShoot();
-          });
-        }
-      }
-      return true;
-    }else{
-      return false;
+  class Zidan {
+    constructor(pos, speed, row){
+      this.row = row;
+      this.pos = pos;
+      this.speed = speed;
     }
-  };
-  Zidan.prototype.damageZobi = function(){
-  };
+
+    drawSelf(){
+      var ctx = move;
+      ctx.save();
+      ctx.translate(this.pos.x, this.pos.y );
+      ctx.fillStyle = '#498727';
+      ctx.fillRect(0, 0, 10, 10);
+      ctx.restore();
+    }
+
+    isHitZobi(){
+      var min = Infinity;
+      var zobi;
+      $.each(zobis[ this.row ], function(_, v){
+        if( min > v.pos.x ){
+          min = v.pos.x;
+          zobi = v;
+        }
+      });
+      if ( this.pos.x > min ){
+        zobi.life -= 2;
+        if( zobi.life === 0 ){
+          zobis[ this.row ] = $.grep(zobis[ this.row ], function(v){
+            return v !== zobi;
+          });
+          if( zobis[this.row].length === 0 ){
+            delete zobis[this.row];
+            $.each( g.findPlant( this.row ), function(_, v){
+              v.stopShoot();
+            });
+          }
+        }
+        return true;
+      }else{
+        return false;
+      }
+    }
+  }
   ////////////////////////////////////////////////////////////////////
   //  植物
   function Plant(type, spec, pos){
@@ -67,7 +69,7 @@ $(function(){
   }
   Plant.prototype.startShoot = function () {
     if( this.isShoot ){
-       return;
+      return;
     }
     this.isShoot = true;
     var self = this;
