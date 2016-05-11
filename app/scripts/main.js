@@ -110,7 +110,26 @@ $(function(){
       this.plants = {};
       //这个按行存放植物
       this.rowPlants = {};
+      this.init();
+    }
+    //初始化地板, 注册事件,让地板可种植植物
+    init(){
       this.drawGround();
+      $('#position').on('click', $.proxy(this.onPlant, this));
+    }
+    onPlant(e){
+      var x = Math.floor( e.offsetX / 80 );
+      var y = Math.floor( e.offsetY / 80 );
+      var posKey = x + '-' + y;
+      if( this.plants[ posKey ] === undefined ){
+        this.plants[ posKey ] = true;
+        this.draw(x, y, 'plants');
+        var plant = new Plant('plants', 1000, {x: x, y: y});
+        if( this.rowPlants[ y ] === undefined){
+          this.rowPlants[ y ] = [];
+        }
+        this.rowPlants[ y ].push(plant);
+      }
     }
     findPlant(row){
       return this.rowPlants[row] || [];
@@ -136,6 +155,7 @@ $(function(){
       ctx.restore();
     }
   }
+  var g = new Ground();
 
   //////////////////////////////////////////////////////////////////
   // 全局管理类,负责一切逻辑控制
@@ -145,27 +165,6 @@ $(function(){
   //     this.zidans = [];
   //   }
   // }
-
-  var g = new Ground();
-  $('#position').on('click', function (e) {
-    var x = Math.floor( e.offsetX / 80 );
-    var y = Math.floor( e.offsetY / 80 );
-    var posKey = x + '-' + y;
-    if( g.plants[ posKey ] === undefined ){
-      g.plants[ posKey ] = true;
-
-      g.draw(x, y, 'plants');
-
-      var plant = new Plant('plants', 1000, {x: x, y: y});
-
-      if( g.rowPlants[ y ] === undefined){
-        g.rowPlants[ y ] = [];
-      }
-      g.rowPlants[ y ].push(plant);
-
-    }
-  });
-
   setInterval(function(){
     var row = Math.floor( Math.random() * 5 );
     var num = Math.floor( Math.random() * 2 + 1 );
@@ -176,13 +175,11 @@ $(function(){
       zobis[row].push( new Z( {x: 720, y: row * 80}, Math.random() + 0.1, 10));
     }
   }, 3000);
-
   var render = function () {
     var ctx = $('#move').get(0).getContext('2d');
     ctx.clearRect(0, 0, 800, 400);
     // 画运动中的僵尸  同时找到与僵尸同行的植物 让他们开始射击
     if( !$.isEmptyObject(zobis) ){
-
       var plants = [];
       $.each(zobis, function(k, v){
         $.each(v, function(_, zobi){
