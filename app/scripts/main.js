@@ -4,11 +4,7 @@
 $(function(){
   var zobis = {};
   var zidans = [];
-  var move = $('#move').get(0).getContext('2d');
 
-  var id2key = function(x, y){
-    return x + '-' + y;
-  };
   ////////////////////////////////////////////////////////////////////
   // 子弹
   class Zidan {
@@ -19,7 +15,7 @@ $(function(){
     }
 
     drawSelf(){
-      var ctx = move;
+      var ctx = $('#move').get(0).getContext('2d');
       ctx.save();
       ctx.translate(this.pos.x, this.pos.y );
       ctx.fillStyle = '#498727';
@@ -55,102 +51,106 @@ $(function(){
       }
     }
   }
-  ////////////////////////////////////////////////////////////////////
+
+  ///////////////////////////////////////////////////////////////////
   //  植物
-  function Plant(type, spec, pos){
-    // 植物类型
-    this.type = type;
-    // 每隔多少秒射击
-    this.spec = spec;
-    //植物位置
-    this.pos = pos;
-    this.isShoot = false;
-    this.timerId = null;
-  }
-  Plant.prototype.startShoot = function () {
-    if( this.isShoot ){
-      return;
+  class Plant {
+    constructor(type, spec, pos){
+      // 植物类型
+      this.type = type;
+      // 每隔多少秒射击
+      this.spec = spec;
+      //植物位置
+      this.pos = pos;
+      this.isShoot = false;
+      this.timerId = null;
     }
-    this.isShoot = true;
-    var self = this;
-    this.timerId = setInterval(function(){
-      var pos = {x: self.pos.x * 80 + 30, y: self.pos.y * 80 + 30};
-      var zidan = new Zidan(pos, 1, self.pos.y);
-      zidan.drawSelf();
-      zidans.push(zidan);
-    }, this.spec);
-  };
-  Plant.prototype.stopShoot = function () {
-    this.isShoot = false;
-    clearInterval(this.timerId);
-  };
+    startShoot(){
+      if( this.isShoot ){
+        return;
+      }
+      this.isShoot = true;
+      var self = this;
+      this.timerId = setInterval(function(){
+        var pos = {x: self.pos.x * 80 + 30, y: self.pos.y * 80 + 30};
+        var zidan = new Zidan(pos, 3, self.pos.y);
+        zidan.drawSelf();
+        zidans.push(zidan);
+      }, this.spec);
+    }
+    stopShoot(){
+      this.isShoot = false;
+      clearInterval(this.timerId);
+    }
+  }
+
   ////////////////////////////////////////////////////////////////////
   //  僵尸
-  function Z( pos, speed, life ) {
-    this.pos = pos;
-    this.speed = speed;
-    this.life = life;
+  class Z{
+    constructor(pos, speed, life){
+      this.pos = pos;
+      this.speed = speed;
+      this.life = life;
+    }
+    drawSelf(){
+      var ctx = $('#move').get(0).getContext('2d');
+      ctx.save();
+      ctx.translate(this.pos.x, this.pos.y);
+      ctx.fillStyle = '#c85d18';
+      ctx.fillRect(0, 0, 80, 80);
+      ctx.restore();
+    }
   }
-  Z.prototype.drawSelf = function () {
-    var ctx = move;
-    ctx.save();
-    ctx.translate(this.pos.x, this.pos.y);
-    ctx.fillStyle = '#c85d18';
-    ctx.fillRect(0, 0, 80, 80);
-    ctx.restore();
-  };
-  setInterval(function(){
-    var row = Math.floor( Math.random() * 5 );
-    var num = Math.floor( Math.random() * 2 + 1 );
-    if( !zobis[row] ){
-      zobis[row] = [];
-    }
-    for( var i = 0; i < num; i++){
-      zobis[row].push( new Z( {x: 720, y: row * 80}, Math.random() + 0.1, 10));
-    }
-  }, 3000);
-
-
 
   ///////////////////////////////////////////////////////////////////
   // 地板
-  function Ground(){
-    this.ctx = $('#ground').get(0).getContext('2d');
-    this.plants = {};
-    //这个按行存放植物
-    this.rowPlants = {};
-    this.drawGround();
-  }
-  Ground.prototype.findPlant = function (row) {
-    return this.rowPlants[row] || [];
-  };
-  Ground.prototype.drawGround = function () {
-    for (var i = 0; i < 8; i++) {
-      for(var j = 0; j < 5; j++){
-        this.draw(i, j, 'block');
+  class Ground{
+    constructor(){
+      this.ctx = $('#ground').get(0).getContext('2d');
+      this.plants = {};
+      //这个按行存放植物
+      this.rowPlants = {};
+      this.drawGround();
+    }
+    findPlant(row){
+      return this.rowPlants[row] || [];
+    }
+    drawGround(){
+      for (var i = 0; i < 8; i++) {
+        for(var j = 0; j < 5; j++){
+          this.draw(i, j, 'block');
+        }
       }
     }
-  };
-  Ground.prototype.draw = function (x, y, type) {
-    var ctx = this.ctx;
-    ctx.save();
-    ctx.translate(x * 80, y * 80);
-    if( type === 'plants' ){
-      ctx.fillStyle = '#1aa64a';
-      ctx.fillRect(0, 0, 80, 80);
-    }else if(type === 'block' ){
-      ctx.strokeStyle = '#9cbaa1';
-      ctx.strokeRect(0, 0, 80, 80);
+    draw(x, y, type){
+      var ctx = this.ctx;
+      ctx.save();
+      ctx.translate(x * 80, y * 80);
+      if( type === 'plants' ){
+        ctx.fillStyle = '#1aa64a';
+        ctx.fillRect(0, 0, 80, 80);
+      }else if(type === 'block' ){
+        ctx.strokeStyle = '#9cbaa1';
+        ctx.strokeRect(0, 0, 80, 80);
+      }
+      ctx.restore();
     }
-    ctx.restore();
-  };
+  }
+
+  //////////////////////////////////////////////////////////////////
+  // 全局管理类,负责一切逻辑控制
+  // class Manager {
+  //   constructor(){
+  //     this.zobis = {};
+  //     this.zidans = [];
+  //   }
+  // }
 
   var g = new Ground();
-
   $('#position').on('click', function (e) {
     var x = Math.floor( e.offsetX / 80 );
     var y = Math.floor( e.offsetY / 80 );
-    var posKey = id2key(x, y);
+    var posKey = x + '-' + y;
     if( g.plants[ posKey ] === undefined ){
       g.plants[ posKey ] = true;
 
@@ -166,12 +166,19 @@ $(function(){
     }
   });
 
-  //////////////////////////////////////////////////////////////////
-
-  // 动画函数 管理子弹和僵尸 以及他们的碰撞
+  setInterval(function(){
+    var row = Math.floor( Math.random() * 5 );
+    var num = Math.floor( Math.random() * 2 + 1 );
+    if( !zobis[row] ){
+      zobis[row] = [];
+    }
+    for( var i = 0; i < num; i++){
+      zobis[row].push( new Z( {x: 720, y: row * 80}, Math.random() + 0.1, 10));
+    }
+  }, 3000);
 
   var render = function () {
-    var ctx = move;
+    var ctx = $('#move').get(0).getContext('2d');
     ctx.clearRect(0, 0, 800, 400);
     // 画运动中的僵尸  同时找到与僵尸同行的植物 让他们开始射击
     if( !$.isEmptyObject(zobis) ){
